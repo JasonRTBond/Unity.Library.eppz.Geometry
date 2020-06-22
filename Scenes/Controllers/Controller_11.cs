@@ -5,57 +5,43 @@
 //  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-#if EPPZ_LINES
+using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
 
+namespace EPPZ.Geometry.Scenes {
 
-namespace EPPZ.Geometry.Lines
-{
-
-
+	using Lines;
 	using Model;
 
+	/// <summary>
+	/// 10. Multiple polygon centroid
+	/// </summary>
+	public class Controller_11 : MonoBehaviour {
 
-	public class PolygonLineRenderer : GeometryLineRenderer
-	{
+		public Source.Polygon[] polygonSources;
 
+		[SerializeField]
+		PolygonLineRenderer resultLine;
 
-		public Color lineColor;
-		public Color boundsColor;
-		public bool normals = false;
+		[SerializeField]
+		Source.Mesh resultMesh;
 
-		public Polygon polygon;
-		Source.Polygon polygonSource;		
-		
-		
-		void Start()
-		{
-			// Model reference.
-			polygonSource = GetComponent<Source.Polygon>();
-			
-			if (polygonSource != null)
-			{ polygon = polygonSource.polygon; }
-		}
+		void Update () {
+			// Collect polygons.
+			Polygon unionPolygon = new Polygon ();
+			foreach (Source.Polygon eachPolygonSource in polygonSources) {
 
-		protected override void OnDraw()
-		{
-			if (polygonSource != null)
-			{ polygon = polygonSource.polygon; }
-
-			if (polygon == null) return; // Only having polygon
-
-			if (polygonSource != null && polygonSource.coordinates == Source.Polygon.Coordinates.World)
-			{
-				DrawRect(polygon.bounds, boundsColor);
-				DrawPolygon(polygon, lineColor, normals);
+				if (unionPolygon.pointCount <= 0) {
+					unionPolygon = eachPolygonSource.polygon;
+				} else {
+					unionPolygon.AddPolygon (eachPolygonSource.polygon);
+					unionPolygon = unionPolygon.UnionPolygon ();
+				}
 			}
-			else
-			{
-				DrawRectWithTransform(polygon.bounds, boundsColor, this.transform);
-				DrawPolygonWithTransform(polygon, lineColor, this.transform, normals);
-			}
+
+			resultLine.polygon = unionPolygon;
+			resultMesh.polygon = unionPolygon;
+
 		}
 	}
 }
-#endif

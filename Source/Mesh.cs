@@ -28,7 +28,7 @@ namespace EPPZ.Geometry.Source
 		public UpdateMode update = UpdateMode.Awake;
 
 		Source.Polygon polygonSource;
-		Model.Polygon polygon;
+		public Model.Polygon polygon;
 		MeshFilter meshFilter;
 
 
@@ -66,6 +66,8 @@ namespace EPPZ.Geometry.Source
 		{
 			if (polygonSource != null)
 			{ polygon = polygonSource.polygon; }
+
+			if (polygon == null) return; // Only having polygon
 
 			meshFilter.mesh = polygon.Mesh(color, triangulator);
 		}

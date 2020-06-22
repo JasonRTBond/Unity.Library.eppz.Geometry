@@ -590,6 +590,69 @@ namespace EPPZ.Geometry.Model
 			return offsetPolygon;
 		}
 
+
+		public Polygon[] DifferencePolygon()
+		{
+			// Calculate Polygon-Clipper scale.
+			float maximum = Mathf.Max(bounds.width, bounds.height);
+			float maximumScale = (float)Int32.MaxValue / maximum;
+			float scale = Mathf.Min(clipperScale, maximumScale);
+
+			// Convert to Clipper.
+			Paths subjectPaths = new Paths();
+			Paths clipPaths = new Paths();
+			{
+				Path path = new Path();
+				EnumeratePoints((Vector2 eachPoint) =>
+				{
+					path.Add(new IntPoint(eachPoint.x * scale, eachPoint.y * scale));
+				});
+				subjectPaths.Add(path);
+			}
+			foreach (Polygon eachPolygon in polygons)
+			{
+				Path path = new Path();
+				eachPolygon.EnumeratePoints((Vector2 eachPoint) =>
+				{
+					path.Add(new IntPoint(eachPoint.x * scale, eachPoint.y * scale));
+				});
+				clipPaths.Add(path);
+			}
+
+			// Clipper union.
+			Paths unionPaths = new Paths();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(subjectPaths, PolyType.ptSubject, true); 
+			clipper.AddPaths(clipPaths, PolyType.ptClip, true); 
+			clipper.Execute(ClipType.ctDifference, unionPaths);
+
+			// Remove self intersections.
+			Paths simplifiedUnionPaths = new Paths();
+			simplifiedUnionPaths =unionPaths;// Clipper.SimplifyPolygons(unionPaths);
+
+			// Convert from Cipper.
+			// Polygon simplifiedUnionPolygon = null;
+			Polygon[] resultPolygons = new Polygon[simplifiedUnionPaths.Count];
+			for (int index = 0; index < simplifiedUnionPaths.Count; index++)
+			{
+				Path eachSolutionPath = simplifiedUnionPaths[index];
+				Polygon eachSolutionPolygon = PolygonFromClipperPath(eachSolutionPath, scale);
+
+				resultPolygons[index] = Polygon.PolygonWithPoints(eachSolutionPolygon.points); // Copy
+				// if (index == 0)
+				// {
+				// 	simplifiedUnionPolygon = Polygon.PolygonWithPoints(eachSolutionPolygon.points); // Copy
+				// }
+				// else
+				// {
+				// 	simplifiedUnionPolygon.AddPolygon(eachSolutionPolygon);
+				// }
+			}
+
+			// Back to Polygon.
+			return resultPolygons;
+		}
+
 		public Polygon UnionPolygon()
 		{
 			// Calculate Polygon-Clipper scale.
